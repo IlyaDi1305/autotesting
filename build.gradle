@@ -1,0 +1,70 @@
+plugins {
+    id 'java'
+}
+
+group = 'ru.russpass'
+version = '1.0.0'
+
+java {
+    sourceCompatibility = JavaVersion.VERSION_17
+    targetCompatibility = JavaVersion.VERSION_17
+}
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    testImplementation 'com.microsoft.playwright:playwright:1.61.0'
+    testImplementation 'org.junit.jupiter:junit-jupiter:5.11.4'
+    testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+}
+
+tasks.withType(JavaCompile).configureEach {
+    options.encoding = 'UTF-8'
+}
+
+tasks.named('test', Test) {
+    useJUnitPlatform()
+    // -Dheaded=true  — видимый браузер
+    // -Dbrowser=firefox|webkit|chromium
+    // -Dchannel=chrome|msedge — опционально; если не найден, fallback на Playwright Chromium
+    systemProperty 'headed', System.getProperty('headed', 'false')
+    systemProperty 'browser', System.getProperty('browser', 'chromium')
+    systemProperty 'channel', System.getProperty('channel', '')
+    // Не перекачивать браузеры при каждом запуске (они уже в %LOCALAPPDATA%\ms-playwright)
+    environment 'PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD', '1'
+    testLogging {
+        events 'passed', 'skipped', 'failed', 'standardOut', 'standardError'
+        showStandardStreams = true
+    }
+    timeout = java.time.Duration.ofMinutes(20)
+}
+
+tasks.register('playwright', JavaExec) {
+    classpath = sourceSets.test.runtimeClasspath
+    mainClass = 'com.microsoft.playwright.CLI'
+}
+
+tasks.register('installBrowsers', JavaExec) {
+    group = 'playwright'
+    description = 'Скачать Chromium для Playwright (один раз перед первым запуском)'
+    classpath = sourceSets.test.runtimeClasspath
+    mainClass = 'com.microsoft.playwright.CLI'
+    args 'install', 'chromium'
+}
+
+tasks.register('testHeaded', Test) {
+    group = 'verification'
+    description = 'E2E-тест покупки с видимым браузером'
+    testClassesDirs = sourceSets.test.output.classesDirs
+    classpath = sourceSets.test.runtimeClasspath
+    useJUnitPlatform()
+    systemProperty 'headed', 'true'
+    systemProperty 'browser', System.getProperty('browser', 'chromium')
+    systemProperty 'channel', System.getProperty('channel', '')
+    environment 'PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD', '1'
+    filter { includeTestsMatching 'ru.russpass.e2e.RiverTripPurchaseTest' }
+    mustRunAfter testClasses
+    dependsOn testClasses
+}
