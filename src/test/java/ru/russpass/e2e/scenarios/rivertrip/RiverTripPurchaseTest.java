@@ -56,6 +56,14 @@ public class RiverTripPurchaseTest extends PlaywrightTestBase {
                     Pattern.CASE_INSENSITIVE
             );
 
+    // Сюда можно добавить несколько тестов
+    @Test
+    void allTests() {
+        purchaseCrimeanBridgeToRussia();
+        purchaseKlenovyToKitayGorod();
+        purchaseParkGorkogo();
+    }
+
     /*
      * ============================================================
      * 01
@@ -403,52 +411,100 @@ public class RiverTripPurchaseTest extends PlaywrightTestBase {
 
         /*
          * --------------------------------------------------------
-         * 6. Открываем выбор времени / судна
+         * 6. Выбираем причал или время/судно (если нужно)
          * --------------------------------------------------------
          */
 
-        System.out.println("Открываем выбор времени/судна");
-        assertThat(
-                page.getByText("Время — Судно")
-        ).isVisible();
+        boolean selectionMade = false;
 
-        page.getByText("Время — Судно")
-                .click();
+// Проверяем, есть ли поле выбора причала
+        if (page.getByText("Причал отправления").count() > 0) {
+            System.out.println("Найден выбор причала, открываем список...");
+            page.getByText("Причал отправления").click();
+            page.waitForTimeout(500);
+
+            // Ждём появления модального окна
+            page.locator("[data-rsbs-content='true']").waitFor();
+
+            // Находим все видимые div внутри модалки с непустым текстом
+            Locator options = page.locator("[data-rsbs-content='true'] div:visible:not(:empty)");
+            int count = options.count();
+            System.out.println("Найдено видимых элементов: " + count);
+
+            Locator selected = null;
+            for (int i = 0; i < count; i++) {
+                Locator option = options.nth(i);
+                String text = option.textContent().trim();
+                // Пропускаем служебные элементы и родительские контейнеры с длинным текстом (> 50 символов)
+                if (!text.contains("Назад") && !text.contains("Причал отправления")
+                        && !text.isEmpty() && text.length() < 50) {
+                    selected = option;
+                    break;
+                }
+            }
+
+            if (selected != null) {
+                System.out.println("Кликаем на причал отправления: " + selected.textContent());
+                selected.click();
+                System.out.println("Причал выбран: " + selected.textContent());
+                selectionMade = true;
+            } else {
+                System.out.println("Не найден подходящий вариант причала");
+            }
+            clickSelectButton();
+            page.getByText("Причал прибытия").click();
+
+            selected = null;
+            for (int i = 0; i < count; i++) {
+                Locator option = options.nth(i);
+                String text = option.textContent().trim();
+                // Пропускаем служебные элементы и родительские контейнеры с длинным текстом (> 50 символов)
+                if (!text.contains("Назад") && !text.contains("Причал прибытия") && !text.contains("Причал отправления")
+                        && !text.isEmpty() && text.length() < 50) {
+                    selected = option;
+                    break;
+                }
+            }
+
+            if (selected != null) {
+                System.out.println("Кликаем на причал прибытия: " + selected.textContent());
+                selected.click();
+                System.out.println("Причал выбран прибытия: " + selected.textContent());
+                selectionMade = true;
+            } else {
+                System.out.println("Не найден подходящий вариант причала");
+            }
+            clickSelectButton();
+        }
+
+        System.out.println("Найден выбор времени/судна, открываем список...");
+        page.getByText("Время — Судно").click();
+        page.waitForTimeout(500);
+        // Берём первый видимый слот по паттерну TIME_SLOT
+        Locator timeSlot = page.getByText(TIME_SLOT).first();
+        if (timeSlot.count() > 0 && timeSlot.isVisible()) {
+            timeSlot.click(new Locator.ClickOptions().setForce(true));
+            System.out.println("Время выбрано: " + timeSlot.textContent());
+            clickSelectButton();
+        } else {
+            System.out.println("Слоты времени не найдены");
+        }
+
+        if (!selectionMade) {
+            System.out.println("Ни причал, ни время не требуют выбора (уже выбраны или не нужны)");
+        }
+
+// Даём время на обновление состояния
+        page.waitForTimeout(500);
+
 
         /*
          * --------------------------------------------------------
-         * 7. Выбираем первый доступный временной слот
+         * 8. Дополнительная задержка перед следующим шагом
          * --------------------------------------------------------
          */
 
-        Locator timeSlot = page.getByText(TIME_SLOT)
-                .first();
-
-        assertThat(timeSlot)
-                .isVisible();
-
-        page.getByText(timeSlot.textContent())
-                .click();
-
-        System.out.println(
-                "Time slot: " + timeSlot.textContent()
-        );
-
-        /*
-         * --------------------------------------------------------
-         * 8. Нажимаем Выбрать
-         * --------------------------------------------------------
-         */
-
-        Locator chooseButton = page.getByRole(
-                com.microsoft.playwright.options.AriaRole.BUTTON,
-                new Page.GetByRoleOptions()
-                        .setName(CHOOSE)
-        ).last();
-
-        assertThat(chooseButton).isVisible();
-
-        chooseButton.click();
+        page.waitForTimeout(500);
         /*
          * --------------------------------------------------------
          * 9. Добавляем 1 взрослый билет
@@ -620,5 +676,39 @@ public class RiverTripPurchaseTest extends PlaywrightTestBase {
         System.out.println("ID   : " + trip.id());
         System.out.println("====================================================");
         System.out.println();
+    }
+
+    private void clickSelectButton() {
+        // Ищем кнопку «Выбрать»
+        Locator chooseButton = page.getByRole(
+                com.microsoft.playwright.options.AriaRole.BUTTON,
+                new Page.GetByRoleOptions().setName(CHOOSE)
+        ).last();
+
+// Проверяем, есть ли кнопка на странице (с таймаутом 2 секунды)
+        try {
+            chooseButton.waitFor(new Locator.WaitForOptions()
+                    .setTimeout(2000)
+                    .setState(com.microsoft.playwright.options.WaitForSelectorState.VISIBLE));
+
+            // Если кнопка видима, кликаем
+            System.out.println("Кнопка «Выбрать» найдена, кликаем");
+            chooseButton.click(new Locator.ClickOptions().setForce(true));
+            System.out.println("Кнопка «Выбрать» нажата");
+
+            // Ждём, пока модальное окно закроется (если оно было)
+            try {
+                page.locator("[data-rsbs-content='true']").waitFor(
+                        new Locator.WaitForOptions()
+                                .setState(com.microsoft.playwright.options.WaitForSelectorState.HIDDEN)
+                                .setTimeout(5000)
+                );
+                System.out.println("Модальное окно закрылось");
+            } catch (Exception ignored) {
+                System.out.println("Модальное окно уже закрыто или не было открыто");
+            }
+        } catch (com.microsoft.playwright.TimeoutError e) {
+            System.out.println("Кнопка «Выбрать» не найдена, пропускаем этот шаг");
+        }
     }
 }

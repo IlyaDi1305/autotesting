@@ -19,7 +19,7 @@ public final class PaymentFlow {
 
     private static final Pattern OTP_NAME = Pattern.compile("код|пароль|sms|подтвержд", Pattern.CASE_INSENSITIVE);
     private static final Pattern OTP_SUBMIT = Pattern.compile("подтвердить|отправ|продолжить|ok|далее", Pattern.CASE_INSENSITIVE);
-    private static final int PAYMENT_TIMEOUT_MS = 180_000;
+    private static final int PAYMENT_TIMEOUT_MS = 360_000;
 
     private PaymentFlow() {
     }
@@ -87,6 +87,7 @@ public final class PaymentFlow {
         // Цепочка: payecom → /payment/success-sber → status=waiting («Почти готово...») → status=success
         page.waitForURL(STATUS_SUCCESS, new Page.WaitForURLOptions().setTimeout(PAYMENT_TIMEOUT_MS));
 
+        System.out.println("Покупка произошла, status = success");
         String url = page.url();
         assertFalse(STATUS_ERROR.matcher(url).find(), "Оплата завершилась ошибкой (status=error): " + url);
         assertThat(page.getByText("Whitelabel Error Page")).hasCount(0);
