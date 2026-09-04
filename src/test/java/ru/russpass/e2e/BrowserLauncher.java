@@ -18,6 +18,7 @@ final class BrowserLauncher {
             default -> playwright.chromium();
         };
 
+
         BrowserType.LaunchOptions options = new BrowserType.LaunchOptions()
                 .setHeadless(!TestSettings.headed());
 
