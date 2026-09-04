@@ -1,4 +1,4 @@
-package ru.russpass.e2e;
+package ru.russpass.e2e.scenarios.helpers;
 
 import com.microsoft.playwright.Browser;
 import com.microsoft.playwright.BrowserContext;
@@ -12,8 +12,13 @@ import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
+import ru.russpass.e2e.AuthSession;
+import ru.russpass.e2e.Env;
+import ru.russpass.e2e.PageActions;
+import ru.russpass.e2e.PaymentFlow;
 
 import java.util.regex.Pattern;
 
@@ -22,6 +27,7 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+@Tag("helpers")
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 class HelpersOfflineTest {
     private static final Pattern OTP_LIKE = Pattern.compile("код|пароль|sms|подтвержд", Pattern.CASE_INSENSITIVE);

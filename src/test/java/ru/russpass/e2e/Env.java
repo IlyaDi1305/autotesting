@@ -8,14 +8,14 @@ import java.nio.file.Path;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
-final class Env {
+public final class Env {
     private static final Map<String, String> FILE_VALUES = new LinkedHashMap<>();
     private static boolean loaded;
 
     private Env() {
     }
 
-    static synchronized void load() {
+    public static synchronized void load() {
         if (loaded) {
             return;
         }
@@ -42,7 +42,7 @@ final class Env {
         loaded = true;
     }
 
-    static String get(String key) {
+    public static String get(String key) {
         load();
         String fromEnv = System.getenv(key);
         if (fromEnv != null && !fromEnv.isBlank()) {
@@ -52,7 +52,7 @@ final class Env {
         return fromFile == null ? "" : fromFile;
     }
 
-    static String get(String key, String defaultValue) {
+    public static String get(String key, String defaultValue) {
         String value = get(key);
         return value.isBlank() ? defaultValue : value;
     }

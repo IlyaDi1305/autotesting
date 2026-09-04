@@ -19,15 +19,18 @@ final class BrowserLauncher {
         };
 
 
-        BrowserType.LaunchOptions options = new BrowserType.LaunchOptions()
-                .setHeadless(!TestSettings.headed());
 
-        String channel = resolveChannel();
+        boolean headed = TestSettings.headed();
+        BrowserType.LaunchOptions options = new BrowserType.LaunchOptions()
+                .setHeadless(!headed)
+                .setSlowMo(headed ? 80.0 : 0);
+
+        String channel = resolveChannel(headed);
         if (channel != null) {
             options.setChannel(channel);
-            System.out.println(">>> Браузер: " + channel);
+            System.out.println(">>> Браузер: " + channel + "  headed=" + headed);
         } else {
-            System.out.println(">>> Браузер: Playwright Chromium (из %LOCALAPPDATA%\\ms-playwright)");
+            System.out.println(">>> Браузер: Playwright Chromium (из %LOCALAPPDATA%\\ms-playwright)  headed=" + headed);
         }
 
         return browserType.launch(options);
@@ -37,8 +40,15 @@ final class BrowserLauncher {
      * -Dchannel=chrome|msedge — явный выбор.
      * Если указанный браузер не найден — fallback на скачанный Playwright Chromium.
      */
-    private static String resolveChannel() {
+    private static String resolveChannel(boolean headed) {
         String requested = TestSettings.channel();
+        if (requested.isEmpty() && headed) {
+            Path chrome = channelExecutable("chrome");
+            if (chrome != null && Files.isRegularFile(chrome)) {
+                System.out.println(">>> headed: берём Google Chrome — Mos.ru чаще пускает его, чем Playwright Chromium");
+                requested = "chrome";
+            }
+        }
         if (requested.isEmpty()) {
             return null;
         }

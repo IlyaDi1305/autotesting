@@ -16,11 +16,11 @@ import java.util.concurrent.TimeUnit;
 
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 @Timeout(value = 10, unit = TimeUnit.MINUTES)
-abstract class PlaywrightTestBase {
-    Playwright playwright;
-    Browser browser;
-    BrowserContext context;
-    Page page;
+public abstract class PlaywrightTestBase {
+    protected Playwright playwright;
+    protected Browser browser;
+    protected BrowserContext context;
+    protected Page page;
 
     @BeforeAll
     void launchBrowser() {

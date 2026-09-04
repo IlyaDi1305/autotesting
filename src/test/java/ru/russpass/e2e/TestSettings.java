@@ -12,19 +12,36 @@ final class TestSettings {
     }
 
     static boolean headed() {
-        return Boolean.parseBoolean(System.getProperty("headed", "false"));
+        return Boolean.parseBoolean(firstNonBlank(
+                System.getProperty("headed"),
+                System.getenv("HEADED"),
+                "false"
+        ));
     }
 
     /** chromium (по умолчанию), firefox, webkit. */
     static String browserName() {
-        return System.getProperty("browser", "chromium").toLowerCase();
+        return firstNonBlank(System.getProperty("browser"), System.getenv("BROWSER"), "chromium")
+                .toLowerCase();
     }
 
     /**
      * Канал браузера: chrome, msedge — использует уже установленный Chrome/Edge,
-     * без скачивания Chromium с CDN. Пример: -Dchannel=chrome
+     * без скачивания Chromium с CDN. Пример: -Pchannel=chrome
      */
     static String channel() {
-        return System.getProperty("channel", "").trim();
+        return firstNonBlank(System.getProperty("channel"), System.getenv("CHANNEL"), "").trim();
+    }
+
+    private static String firstNonBlank(String... values) {
+        if (values == null) {
+            return "";
+        }
+        for (String value : values) {
+            if (value != null && !value.isBlank()) {
+                return value;
+            }
+        }
+        return "";
     }
 }

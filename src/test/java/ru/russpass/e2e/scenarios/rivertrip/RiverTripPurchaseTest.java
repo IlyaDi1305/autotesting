@@ -1,4 +1,4 @@
-package ru.russpass.e2e;
+package ru.russpass.e2e.scenarios.rivertrip;
 
 import com.microsoft.playwright.Locator;
 import com.microsoft.playwright.Page;
@@ -6,7 +6,12 @@ import com.microsoft.playwright.assertions.LocatorAssertions;
 import com.microsoft.playwright.options.AriaRole;
 import org.junit.jupiter.api.Assumptions;
 import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
+import ru.russpass.e2e.Env;
+import ru.russpass.e2e.PageActions;
+import ru.russpass.e2e.PaymentFlow;
+import ru.russpass.e2e.PlaywrightTestBase;
 
 import java.net.URI;
 import java.util.regex.Pattern;
@@ -14,6 +19,7 @@ import java.util.regex.Pattern;
 import static com.microsoft.playwright.assertions.PlaywrightAssertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+@Tag("rivertrip")
 class RiverTripPurchaseTest extends PlaywrightTestBase {
     private static final Pattern TIME_SLOT = Pattern.compile("\\d{1,2}:\\d{2}\\s*—\\s*\\d{1,2}:\\d{2}");
     private static final Pattern BUY_TICKETS = Pattern.compile("Купить билеты \\d+ билет", Pattern.CASE_INSENSITIVE);
