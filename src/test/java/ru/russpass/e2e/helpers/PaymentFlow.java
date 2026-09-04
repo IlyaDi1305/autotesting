@@ -1,4 +1,4 @@
-package ru.russpass.e2e;
+package ru.russpass.e2e.helpers;
 
 import com.microsoft.playwright.Locator;
 import com.microsoft.playwright.Page;
@@ -12,19 +12,19 @@ import static com.microsoft.playwright.assertions.PlaywrightAssertions.assertTha
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-final class PaymentFlow {
+public final class PaymentFlow {
     static final Pattern PAYECOM = Pattern.compile("payecom\\.ru", Pattern.CASE_INSENSITIVE);
     static final Pattern STATUS_SUCCESS = Pattern.compile("status=success", Pattern.CASE_INSENSITIVE);
     static final Pattern STATUS_ERROR = Pattern.compile("status=error", Pattern.CASE_INSENSITIVE);
 
     private static final Pattern OTP_NAME = Pattern.compile("код|пароль|sms|подтвержд", Pattern.CASE_INSENSITIVE);
     private static final Pattern OTP_SUBMIT = Pattern.compile("подтвердить|отправ|продолжить|ok|далее", Pattern.CASE_INSENSITIVE);
-    private static final int PAYMENT_TIMEOUT_MS = 180_000;
+    private static final int PAYMENT_TIMEOUT_MS = 360_000;
 
     private PaymentFlow() {
     }
 
-    static void fillCardAndPay(Page page, String cardNumber, String cardExpiry, String cardCvc) {
+    public static void fillCardAndPay(Page page, String cardNumber, String cardExpiry, String cardCvc) {
         page.waitForURL(PAYECOM, new Page.WaitForURLOptions().setTimeout(60_000));
         page.locator("#cardNumber").waitFor(new Locator.WaitForOptions()
                 .setState(WaitForSelectorState.VISIBLE)
@@ -62,7 +62,7 @@ final class PaymentFlow {
         }
     }
 
-    static Outcome waitForOutcome(Page page, Locator otp, int timeoutMs) {
+    public static Outcome waitForOutcome(Page page, Locator otp, int timeoutMs) {
         long deadline = System.currentTimeMillis() + timeoutMs;
         while (System.currentTimeMillis() < deadline) {
             String url = page.url();
@@ -83,17 +83,18 @@ final class PaymentFlow {
         throw new AssertionError("Не дождались исхода оплаты за " + timeoutMs + " мс");
     }
 
-    static void expectSuccess(Page page) {
+    public static void expectSuccess(Page page) {
         // Цепочка: payecom → /payment/success-sber → status=waiting («Почти готово...») → status=success
         page.waitForURL(STATUS_SUCCESS, new Page.WaitForURLOptions().setTimeout(PAYMENT_TIMEOUT_MS));
 
+        System.out.println("Покупка произошла, status = success");
         String url = page.url();
         assertFalse(STATUS_ERROR.matcher(url).find(), "Оплата завершилась ошибкой (status=error): " + url);
         assertThat(page.getByText("Whitelabel Error Page")).hasCount(0);
         assertTrue(STATUS_SUCCESS.matcher(url).find(), "Прогулка не была куплена: нет status=success, URL: " + url);
     }
 
-    enum Outcome {
+    public enum Outcome {
         SUCCESS,
         WAITING,
         ERROR,

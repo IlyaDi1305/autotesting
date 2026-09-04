@@ -24,21 +24,89 @@ tasks.withType(JavaCompile).configureEach {
     options.encoding = 'UTF-8'
 }
 
-tasks.named('test', Test) {
-    useJUnitPlatform()
-    // -Dheaded=true  — видимый браузер
-    // -Dbrowser=firefox|webkit|chromium
-    // -Dchannel=chrome|msedge — опционально; если не найден, fallback на Playwright Chromium
-    systemProperty 'headed', System.getProperty('headed', 'false')
-    systemProperty 'browser', System.getProperty('browser', 'chromium')
-    systemProperty 'channel', System.getProperty('channel', '')
-    // Не перекачивать браузеры при каждом запуске (они уже в %LOCALAPPDATA%\ms-playwright)
-    environment 'PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD', '1'
-    testLogging {
+// Папка сценария: src/test/java/ru/russpass/e2e/scenarios/<dir>
+// Запуск: ./gradlew testRiverTrip  |  ./gradlew testHelpers  |  ./gradlew test -Pscenario=riverTrip
+def e2eScenarios = [
+        riverTrip: [
+                include     : 'ru.russpass.e2e.scenarios.rivertrip.*',
+                description : 'E2E: покупка речной прогулки Зарядье'
+        ],
+        helpers: [
+                include     : 'ru.russpass.e2e.scenarios.helpers.*',
+                description : 'Офлайн-проверки хелперов'
+        ]
+]
+
+def cliOrProjectProp = { String key, String defaultValue ->
+    def fromCli = gradle.startParameter.systemPropertiesArgs.get(key)
+    if (fromCli != null) {
+        return fromCli
+    }
+    def fromProject = project.findProperty(key)
+    if (fromProject != null) {
+        return fromProject.toString()
+    }
+    def fromGradleJvm = System.getProperty(key)
+    if (fromGradleJvm != null) {
+        return fromGradleJvm
+    }
+    def fromEnv = System.getenv(key.toUpperCase())
+    if (fromEnv != null && !fromEnv.isBlank()) {
+        return fromEnv
+    }
+    return defaultValue
+}
+
+def configurePlaywrightTest = { Test task ->
+    task.useJUnitPlatform()
+    task.jvmArgs '-Dfile.encoding=UTF-8',
+            '-Dstdout.encoding=UTF-8',
+            '-Dstderr.encoding=UTF-8',
+            '-Dsun.stdout.encoding=UTF-8',
+            '-Dsun.stderr.encoding=UTF-8'
+    // headed/browser/channel: -Pheaded=true  или  -Dheaded=true  (на Windows надёжнее -P)
+    task.systemProperty 'headed', cliOrProjectProp('headed', 'false')
+    task.systemProperty 'browser', cliOrProjectProp('browser', 'chromium')
+    task.systemProperty 'channel', cliOrProjectProp('channel', '')
+    task.environment 'PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD', '1'
+    task.testLogging {
         events 'passed', 'skipped', 'failed', 'standardOut', 'standardError'
         showStandardStreams = true
     }
-    timeout = java.time.Duration.ofMinutes(20)
+    task.timeout = java.time.Duration.ofMinutes(20)
+}
+
+tasks.named('test', Test) {
+    configurePlaywrightTest(it)
+    def scenario = findProperty('scenario')
+    if (scenario) {
+        def cfg = e2eScenarios[scenario]
+        if (cfg == null) {
+            throw new GradleException("Неизвестный сценарий '${scenario}'. Доступны: ${e2eScenarios.keySet()}")
+        }
+        filter {
+            includeTestsMatching cfg.include
+        }
+    }
+}
+
+e2eScenarios.each { name, cfg ->
+    def taskName = "test${name.capitalize()}"
+    tasks.register(taskName, Test) {
+        group = 'verification'
+        description = cfg.description
+        testClassesDirs = sourceSets.test.output.classesDirs
+        classpath = sourceSets.test.runtimeClasspath
+        configurePlaywrightTest(delegate)
+        filter {
+            includeTestsMatching cfg.include
+        }
+        reports.html.outputLocation = layout.buildDirectory.dir("reports/tests/${taskName}")
+        reports.junitXml.outputLocation = layout.buildDirectory.dir("test-results/${taskName}")
+        binaryResultsDirectory = layout.buildDirectory.dir("test-results/${taskName}/binary")
+        mustRunAfter testClasses
+        dependsOn testClasses
+    }
 }
 
 tasks.register('playwright', JavaExec) {
@@ -56,15 +124,15 @@ tasks.register('installBrowsers', JavaExec) {
 
 tasks.register('testHeaded', Test) {
     group = 'verification'
-    description = 'E2E-тест покупки с видимым браузером'
+    description = 'E2E покупки речной прогулки с видимым браузером'
     testClassesDirs = sourceSets.test.output.classesDirs
     classpath = sourceSets.test.runtimeClasspath
-    useJUnitPlatform()
+    configurePlaywrightTest(delegate)
     systemProperty 'headed', 'true'
-    systemProperty 'browser', System.getProperty('browser', 'chromium')
-    systemProperty 'channel', System.getProperty('channel', '')
-    environment 'PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD', '1'
-    filter { includeTestsMatching 'ru.russpass.e2e.RiverTripPurchaseTest' }
+    filter { includeTestsMatching e2eScenarios.riverTrip.include }
+    reports.html.outputLocation = layout.buildDirectory.dir('reports/tests/testHeaded')
+    reports.junitXml.outputLocation = layout.buildDirectory.dir('test-results/testHeaded')
+    binaryResultsDirectory = layout.buildDirectory.dir('test-results/testHeaded/binary')
     mustRunAfter testClasses
     dependsOn testClasses
 }

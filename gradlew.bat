@@ -26,6 +26,9 @@
 @rem Set local scope for the variables with windows NT shell
 if "%OS%"=="Windows_NT" setlocal
 
+@rem Иначе UTF-8 логи тестов в cmd выглядят как "╨æ╤Ç..." вместо русского
+chcp 65001 >nul
+
 set DIRNAME=%~dp0
 if "%DIRNAME%"=="" set DIRNAME=.
 @rem This is normally unused
