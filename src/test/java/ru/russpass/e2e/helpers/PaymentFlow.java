@@ -1,4 +1,4 @@
-package ru.russpass.e2e;
+package ru.russpass.e2e.helpers;
 
 import com.microsoft.playwright.Locator;
 import com.microsoft.playwright.Page;

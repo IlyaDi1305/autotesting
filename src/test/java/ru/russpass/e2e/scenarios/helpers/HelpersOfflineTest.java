@@ -15,10 +15,10 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
-import ru.russpass.e2e.AuthSession;
-import ru.russpass.e2e.Env;
-import ru.russpass.e2e.PageActions;
-import ru.russpass.e2e.PaymentFlow;
+import ru.russpass.e2e.helpers.AuthSession;
+import ru.russpass.e2e.helpers.Env;
+import ru.russpass.e2e.helpers.PageActions;
+import ru.russpass.e2e.helpers.PaymentFlow;
 
 import java.util.regex.Pattern;
 

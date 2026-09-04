@@ -1,4 +1,4 @@
-package ru.russpass.e2e;
+package ru.russpass.e2e.helpers;
 
 import com.microsoft.playwright.Browser;
 import com.microsoft.playwright.BrowserContext;
@@ -9,6 +9,7 @@ import com.microsoft.playwright.assertions.LocatorAssertions;
 import com.microsoft.playwright.options.AriaRole;
 import com.microsoft.playwright.options.Cookie;
 import org.junit.jupiter.api.Assumptions;
+import ru.russpass.e2e.config.TestSettings;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;
@@ -36,7 +37,7 @@ public final class AuthSession {
     private AuthSession() {
     }
 
-    static void ensure(Browser browser) {
+    public static void ensure(Browser browser) {
         String login = Env.get("RUSSPASS_LOGIN");
         String password = Env.get("RUSSPASS_PASSWORD");
         if (login.isBlank() || password.isBlank()) {

@@ -1,4 +1,4 @@
-package ru.russpass.e2e;
+package ru.russpass.e2e.helpers;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;
